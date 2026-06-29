@@ -331,6 +331,22 @@ function roundOne(num) {
   return Math.round(num * 10) / 10;
 }
 
+function hasFoodNutrition(food) {
+  return food && food.hasNutrition !== false && (
+    Number.isFinite(Number(food.calories)) ||
+    Number.isFinite(Number(food.protein)) ||
+    Number.isFinite(Number(food.fat))
+  );
+}
+
+function formatFoodNutrition(food) {
+  if (!hasFoodNutrition(food)) return "נשמר ללא פרטים מספריים";
+  const calories = Number(food.calories) || 0;
+  const protein = Number(food.protein) || 0;
+  const fat = Number(food.fat) || 0;
+  return `${calories} קל׳ · ${protein} ג חלבון · ${fat} ג שומן`;
+}
+
 
 function getFoodSuggestionMatch(name) {
   const cleanedName = cleanFoodName(name);
@@ -466,9 +482,16 @@ export default function DayBoard() {
       if (!prev.name.trim()) {
         next.autoNote = "";
       } else if (savedMatch) {
-        next.autoNote = `זוהה מוצר שמור בספר: ${savedMatch.name}. אפשר לפתוח את ספר המוצרים ולהוסיף אותו בלחיצה אחת.`;
+        if (hasFoodNutrition(savedMatch)) {
+          if (!prev.calories) next.calories = String(savedMatch.calories ?? "");
+          if (!prev.protein) next.protein = String(savedMatch.protein ?? "");
+          if (!prev.fat) next.fat = String(savedMatch.fat ?? "");
+          next.autoNote = `זוהה מוצר שמור בספר: ${savedMatch.name}. הפרטים מולאו אוטומטית, ואפשר לערוך לפני שמירה.`;
+        } else {
+          next.autoNote = `זוהה מוצר שמור בספר: ${savedMatch.name}. אפשר להוסיף מהר בלי מספרים.`;
+        }
       } else if (suggestionMatch) {
-        next.autoNote = `זוהה מאכל מהרשימה: ${suggestionMatch}. מלא את הפרטים לפי האריזה/המידע שיש לך.`;
+        next.autoNote = `זוהה מאכל מהרשימה: ${suggestionMatch}. אפשר להוסיף מהר בלי מספרים, או למלא פרטים אם יש לך.`;
       } else {
         next.autoNote = "";
       }
@@ -581,24 +604,36 @@ export default function DayBoard() {
     await refreshHistory();
   }, [refreshHistory]);
 
-  const addFood = () => {
+  const resetFoodForm = () => {
+    setFoodForm({ name: "", grams: "", calories: "", protein: "", fat: "", autoNote: "" });
+  };
+
+  const addFood = (mode = "detailed") => {
     const rawName = foodForm.name.trim();
     const name = cleanFoodName(rawName) || rawName;
     const grams = getFoodGrams(rawName, foodForm.grams);
+    if (!name) return;
+
     const calories = parseFloat(foodForm.calories);
-    if (!name || isNaN(calories)) return;
+    const protein = parseFloat(foodForm.protein);
+    const fat = parseFloat(foodForm.fat);
+    const hasDetails = Number.isFinite(calories) || Number.isFinite(protein) || Number.isFinite(fat);
+
+    if (mode === "detailed" && !hasDetails) return;
+
     const entry = {
       id: uid(),
       name,
       grams: grams || null,
-      calories: Math.round(calories),
-      protein: parseFloat(foodForm.protein) || 0,
-      fat: parseFloat(foodForm.fat) || 0,
-      estimateNote: foodForm.autoNote || null,
+      hasNutrition: hasDetails,
+      calories: hasDetails && Number.isFinite(calories) ? Math.round(calories) : null,
+      protein: hasDetails && Number.isFinite(protein) ? roundOne(protein) : null,
+      fat: hasDetails && Number.isFinite(fat) ? roundOne(fat) : null,
+      estimateNote: hasDetails ? (foodForm.autoNote || null) : "נשמר בלי קלוריות/מאקרו",
       time: new Date().toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" }),
     };
     persistFood([...foodEntries, entry]);
-    setFoodForm({ name: "", grams: "", calories: "", protein: "", fat: "", autoNote: "" });
+    resetFoodForm();
   };
 
   const deleteFood = (id) => {
@@ -613,14 +648,18 @@ export default function DayBoard() {
 
   const addProductToLibrary = () => {
     const name = libraryForm.name.trim();
+    if (!name) return;
     const calories = parseFloat(libraryForm.calories);
-    if (!name || isNaN(calories)) return;
+    const protein = parseFloat(libraryForm.protein);
+    const fat = parseFloat(libraryForm.fat);
+    const hasDetails = Number.isFinite(calories) || Number.isFinite(protein) || Number.isFinite(fat);
     const product = {
       id: uid(),
       name,
-      calories: Math.round(calories),
-      protein: parseFloat(libraryForm.protein) || 0,
-      fat: parseFloat(libraryForm.fat) || 0,
+      hasNutrition: hasDetails,
+      calories: hasDetails && Number.isFinite(calories) ? Math.round(calories) : null,
+      protein: hasDetails && Number.isFinite(protein) ? roundOne(protein) : null,
+      fat: hasDetails && Number.isFinite(fat) ? roundOne(fat) : null,
     };
     persistLibrary([...savedFoods, product]);
     setLibraryForm({ name: "", calories: "", protein: "", fat: "" });
@@ -632,12 +671,15 @@ export default function DayBoard() {
   };
 
   const logProductFromLibrary = (product) => {
+    const hasDetails = hasFoodNutrition(product);
     const entry = {
       id: uid(),
       name: product.name,
-      calories: product.calories,
-      protein: product.protein,
-      fat: product.fat,
+      hasNutrition: hasDetails,
+      calories: hasDetails ? product.calories : null,
+      protein: hasDetails ? product.protein : null,
+      fat: hasDetails ? product.fat : null,
+      estimateNote: hasDetails ? "נוסף מספר המוצרים" : "נשמר בלי קלוריות/מאקרו",
       time: new Date().toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" }),
     };
     persistFood([...foodEntries, entry]);
@@ -645,9 +687,9 @@ export default function DayBoard() {
 
   const foodTotals = foodEntries.reduce(
     (acc, f) => ({
-      calories: acc.calories + f.calories,
-      protein: acc.protein + f.protein,
-      fat: acc.fat + f.fat,
+      calories: acc.calories + (Number(f.calories) || 0),
+      protein: acc.protein + (Number(f.protein) || 0),
+      fat: acc.fat + (Number(f.fat) || 0),
     }),
     { calories: 0, protein: 0, fat: 0 }
   );
@@ -1183,9 +1225,9 @@ function FoodView({
       </button>
 
       <Card>
-        <p className="text-sm font-medium mb-1">הוספה חד-פעמית</p>
+        <p className="text-sm font-medium mb-1">הוספת אוכל</p>
         <p className="text-[11px] mb-3" style={{ color: palette.mutedInk }}>
-          כתוב מאכל וכמות בגרמים, למשל: שווארמה 200 גרם, פיצה, סושי או קינדר בואנו. האפליקציה תזהה מאכלים מהרשימה ותשלים גרמים מהטקסט, ואת הפרטים אפשר למלא/לערוך לפני שמירה.
+          אפשר להוסיף מהר רק שם וכמות, בלי לדעת קלוריות. אם יש פרטים מהאריזה או מוצר שמור בספר, אפשר לשמור גם עם מספרים.
         </p>
         <div className="space-y-2">
           <input
@@ -1213,6 +1255,7 @@ function FoodView({
               {foodForm.autoNote}
             </p>
           )}
+          <p className="text-[11px] mt-1" style={{ color: palette.mutedInk }}>פרטים אופציונליים</p>
           <div className="flex gap-2">
             <input
               value={foodForm.calories}
@@ -1239,13 +1282,22 @@ function FoodView({
               style={{ background: palette.bg, border: `1px solid ${palette.border}` }}
             />
           </div>
-          <button
-            onClick={addFood}
-            className="w-full rounded-xl py-2 flex items-center justify-center gap-1 font-medium"
-            style={{ background: palette.foodAccent, color: "#fff" }}
-          >
-            <Plus size={18} /> הוסף לתפריט היום
-          </button>
+          <div className="grid grid-cols-1 gap-2">
+            <button
+              onClick={() => addFood("quick")}
+              className="w-full rounded-xl py-2 flex items-center justify-center gap-1 font-medium"
+              style={{ background: palette.foodAccent, color: "#fff" }}
+            >
+              <Plus size={18} /> הוסף מהר בלי מספרים
+            </button>
+            <button
+              onClick={() => addFood("detailed")}
+              className="w-full rounded-xl py-2 flex items-center justify-center gap-1 font-medium"
+              style={{ background: palette.foodAccentSoft, color: palette.foodAccent }}
+            >
+              <Plus size={18} /> הוסף עם פרטים
+            </button>
+          </div>
         </div>
       </Card>
 
@@ -1258,7 +1310,7 @@ function FoodView({
               <div className="flex-1">
                 <p className="text-sm font-medium">{f.name}</p>
                 <p className="text-[11px]" style={{ color: palette.mutedInk }}>
-                  {f.time}{f.grams ? ` · ${f.grams} גרם` : ""} · {f.calories} קל׳ · {f.protein} ג חלבון · {f.fat} ג שומן
+                  {f.time}{f.grams ? ` · ${f.grams} גרם` : ""} · {formatFoodNutrition(f)}
                 </p>
               </div>
               <button onClick={() => deleteFood(f.id)} style={{ color: palette.mutedInk }}>
@@ -1364,7 +1416,7 @@ function ProductLibraryModal({
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{p.name}</p>
                     <p className="text-[11px]" style={{ color: palette.mutedInk }}>
-                      {p.calories} קל׳ · {p.protein} ג חלבון · {p.fat} ג שומן
+                      {formatFoodNutrition(p)}
                     </p>
                   </div>
                   <button
@@ -1424,7 +1476,7 @@ function HistoryView({ historyRows }) {
                   <div className="space-y-1">
                     {day.food.map((f) => (
                       <p key={f.id} className="text-[12px]" style={{ color: palette.mutedInk }}>
-                        {f.time} · {f.name}{f.grams ? ` · ${f.grams} גרם` : ""} · {f.calories} קל׳ · {f.protein} ג חלבון
+                        {f.time} · {f.name}{f.grams ? ` · ${f.grams} גרם` : ""} · {formatFoodNutrition(f)}
                       </p>
                     ))}
                   </div>
