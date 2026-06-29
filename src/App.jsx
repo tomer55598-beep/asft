@@ -27,6 +27,12 @@ const TASK_STATUS = {
   done: "בוצע",
 };
 
+const TASK_PRIORITY = {
+  high: "דחופה",
+  normal: "רגילה",
+  low: "נמוכה",
+};
+
 const FOOD_SUGGESTIONS = [
   "שווארמה",
   "שווארמה בצלחת",
@@ -55,6 +61,12 @@ const FOOD_SUGGESTIONS = [
   "חזה עוף על האש",
   "קציצות",
   "כדורי בשר",
+  "צלי בקר",
+  "גולאש",
+  "בשר טחון",
+  "עראייס",
+  "מעורב ירושלמי",
+  "חמין",
   "טונה",
   "סלמון",
   "דג לבן",
@@ -111,6 +123,9 @@ const FOOD_SUGGESTIONS = [
   "אדממה",
   "גיוזה",
   "מוקפץ",
+  "מוקפץ עוף",
+  "מוקפץ בקר",
+  "מוקפץ ירקות",
   "נודלס",
   "פאד תאי",
   "ראמן",
@@ -118,6 +133,18 @@ const FOOD_SUGGESTIONS = [
   "אורז מוקפץ",
   "עוף חמוץ מתוק",
   "עוף טריאקי",
+  "עוף בקארי",
+  "קארי עוף",
+  "עוף קארי עם אורז",
+  "קארי ירוק",
+  "קארי אדום",
+  "קארי תאילנדי",
+  "עוף במסאלה",
+  "עוף טיקה",
+  "צ׳יקן טיקה",
+  "עוף חמאה",
+  "אורז עם עוף",
+  "עוף עם תפוחי אדמה",
   "פלאפל",
   "פלאפל בפיתה",
   "פלאפל בצלחת",
@@ -154,6 +181,15 @@ const FOOD_SUGGESTIONS = [
   "פסטה",
   "פסטה פסטו",
   "פסטה עגבניות",
+  "פסטה בולונז",
+  "ספגטי בולונז",
+  "בולונז",
+  "רוטב בולונז",
+  "פסטה שמנת",
+  "פסטה אלפרדו",
+  "פסטה רוזה",
+  "פסטה טונה",
+  "פסטה עוף",
   "לזניה",
   "רביולי",
   "ניוקי",
@@ -255,6 +291,10 @@ function getTaskStatus(task) {
 
 function isTaskDone(task) {
   return getTaskStatus(task) === "done";
+}
+
+function getTaskPriority(task) {
+  return task.priority || "normal";
 }
 
 function normalizeFoodText(text) {
@@ -388,6 +428,8 @@ export default function DayBoard() {
 
   const [tasks, setTasks] = useState([]);
   const [newTaskText, setNewTaskText] = useState("");
+  const [newTaskPriority, setNewTaskPriority] = useState("normal");
+  const [taskFilter, setTaskFilter] = useState("open");
   const [showDueFields, setShowDueFields] = useState(false);
   const [dueDateInput, setDueDateInput] = useState("");
   const [dueTimeInput, setDueTimeInput] = useState("");
@@ -490,7 +532,7 @@ export default function DayBoard() {
     const text = newTaskText.trim();
     if (!text) return;
     const due = dueDateInput ? { date: dueDateInput, time: dueTimeInput || null } : null;
-    const next = [...tasks, { id: uid(), text, status: "not_done", statusText: "", done: false, createdAt: Date.now(), due }];
+    const next = [...tasks, { id: uid(), text, status: "not_done", statusText: "", priority: newTaskPriority, done: false, createdAt: Date.now(), due }];
     persistTasks(next);
     setNewTaskText("");
     setDueDateInput("");
@@ -514,6 +556,11 @@ export default function DayBoard() {
 
   const updateTaskStatusText = (id, statusText) => {
     const next = tasks.map((t) => (t.id === id ? { ...t, statusText } : t));
+    persistTasks(next);
+  };
+
+  const updateTaskPriority = (id, priority) => {
+    const next = tasks.map((t) => (t.id === id ? { ...t, priority } : t));
     persistTasks(next);
   };
 
@@ -694,10 +741,15 @@ export default function DayBoard() {
             tasks={tasks}
             newTaskText={newTaskText}
             setNewTaskText={setNewTaskText}
+            newTaskPriority={newTaskPriority}
+            setNewTaskPriority={setNewTaskPriority}
+            taskFilter={taskFilter}
+            setTaskFilter={setTaskFilter}
             addTask={addTask}
             toggleTask={toggleTask}
             updateTaskStatus={updateTaskStatus}
             updateTaskStatusText={updateTaskStatusText}
+            updateTaskPriority={updateTaskPriority}
             deleteTask={deleteTask}
             clearDoneTasks={clearDoneTasks}
             showDueFields={showDueFields}
@@ -808,6 +860,37 @@ function isOverdue(due) {
   return dt.getTime() < Date.now();
 }
 
+function isDueToday(due) {
+  return Boolean(due && due.date === getDateKey());
+}
+
+function taskDueTime(task) {
+  return task.due ? new Date(`${task.due.date}T${task.due.time || "23:59"}`).getTime() : Infinity;
+}
+
+function taskPriorityRank(task) {
+  const p = getTaskPriority(task);
+  if (p === "high") return 0;
+  if (p === "normal") return 1;
+  return 2;
+}
+
+function sortTasksSmart(a, b) {
+  const aDone = isTaskDone(a);
+  const bDone = isTaskDone(b);
+  if (aDone !== bDone) return aDone ? 1 : -1;
+  const aOverdue = !aDone && isOverdue(a.due);
+  const bOverdue = !bDone && isOverdue(b.due);
+  if (aOverdue !== bOverdue) return aOverdue ? -1 : 1;
+  const aDue = taskDueTime(a);
+  const bDue = taskDueTime(b);
+  if (aDue !== bDue) return aDue - bDue;
+  const aPr = taskPriorityRank(a);
+  const bPr = taskPriorityRank(b);
+  if (aPr !== bPr) return aPr - bPr;
+  return (a.createdAt || 0) - (b.createdAt || 0);
+}
+
 function formatDue(due) {
   if (!due || !due.date) return "";
   const txt = formatShortDate(due.date);
@@ -815,18 +898,31 @@ function formatDue(due) {
 }
 
 function TasksView({
-  tasks, newTaskText, setNewTaskText, addTask, toggleTask, updateTaskStatus, deleteTask, clearDoneTasks,
+  tasks, newTaskText, setNewTaskText, newTaskPriority, setNewTaskPriority, taskFilter, setTaskFilter,
+  addTask, toggleTask, updateTaskStatus, updateTaskStatusText, updateTaskPriority, deleteTask, clearDoneTasks,
   showDueFields, setShowDueFields, dueDateInput, setDueDateInput, dueTimeInput, setDueTimeInput,
 }) {
-  const activeTasks = tasks
-    .filter((t) => !isTaskDone(t))
-    .slice()
-    .sort((a, b) => {
-      const aTime = a.due ? new Date(`${a.due.date}T${a.due.time || "23:59"}`).getTime() : Infinity;
-      const bTime = b.due ? new Date(`${b.due.date}T${b.due.time || "23:59"}`).getTime() : Infinity;
-      return aTime - bTime;
-    });
-  const doneTasks = tasks.filter((t) => isTaskDone(t));
+  const activeTasks = tasks.filter((t) => !isTaskDone(t)).slice().sort(sortTasksSmart);
+  const doneTasks = tasks.filter((t) => isTaskDone(t)).slice().sort(sortTasksSmart);
+  const overdueTasks = activeTasks.filter((t) => isOverdue(t.due));
+  const todayTasks = activeTasks.filter((t) => isDueToday(t.due));
+  const highTasks = activeTasks.filter((t) => getTaskPriority(t) === "high");
+
+  const filterOptions = [
+    { key: "open", label: `פתוחות (${activeTasks.length})` },
+    { key: "today", label: `היום (${todayTasks.length})` },
+    { key: "high", label: `דחופות (${highTasks.length})` },
+    { key: "done", label: `בוצעו (${doneTasks.length})` },
+    { key: "all", label: `הכל (${tasks.length})` },
+  ];
+
+  const shownTasks = (() => {
+    if (taskFilter === "today") return todayTasks;
+    if (taskFilter === "high") return highTasks;
+    if (taskFilter === "done") return doneTasks;
+    if (taskFilter === "all") return tasks.slice().sort(sortTasksSmart);
+    return activeTasks;
+  })();
 
   return (
     <div>
@@ -860,6 +956,19 @@ function TasksView({
           </button>
         </div>
 
+        <div className="mb-2">
+          <select
+            value={newTaskPriority}
+            onChange={(e) => setNewTaskPriority(e.target.value)}
+            className="w-full rounded-xl px-3 py-2 outline-none text-sm"
+            style={{ background: palette.bg, border: `1px solid ${palette.border}`, color: palette.ink }}
+          >
+            <option value="normal">עדיפות רגילה</option>
+            <option value="high">עדיפות דחופה</option>
+            <option value="low">עדיפות נמוכה</option>
+          </select>
+        </div>
+
         {showDueFields && (
           <div className="flex gap-2">
             <input
@@ -880,45 +989,92 @@ function TasksView({
         )}
       </Card>
 
+      {tasks.length > 0 && (
+        <Card>
+          <div className="grid grid-cols-4 gap-2 text-center mb-3">
+            <MiniStat label="פתוחות" value={activeTasks.length} />
+            <MiniStat label="היום" value={todayTasks.length} />
+            <MiniStat label="דחופות" value={highTasks.length} danger={highTasks.length > 0} />
+            <MiniStat label="באיחור" value={overdueTasks.length} danger={overdueTasks.length > 0} />
+          </div>
+
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {filterOptions.map((f) => {
+              const active = taskFilter === f.key;
+              return (
+                <button
+                  key={f.key}
+                  onClick={() => setTaskFilter(f.key)}
+                  className="rounded-xl px-3 py-1.5 text-xs whitespace-nowrap"
+                  style={{
+                    background: active ? palette.tasksAccent : palette.bg,
+                    color: active ? "#fff" : palette.mutedInk,
+                    border: `1px solid ${active ? palette.tasksAccent : palette.border}`,
+                  }}
+                >
+                  {f.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {doneTasks.length > 0 && (
+            <button onClick={clearDoneTasks} className="text-xs flex items-center gap-1 mt-3" style={{ color: palette.mutedInk }}>
+              <RotateCcw size={12} /> נקה משימות שבוצעו
+            </button>
+          )}
+        </Card>
+      )}
+
       {tasks.length === 0 && (
         <p className="text-sm text-center mt-8" style={{ color: palette.mutedInk }}>
           הרשימה פנויה. מה הדבר הראשון שצריך לעשות היום?
         </p>
       )}
 
-      {activeTasks.length > 0 && (
-        <div className="space-y-2 mb-4">
-          {activeTasks.map((task) => (
-            <TaskRow key={task.id} task={task} onToggle={() => toggleTask(task.id)} onStatusChange={(status) => updateTaskStatus(task.id, status)} onStatusTextChange={(statusText) => updateTaskStatusText(task.id, statusText)} onDelete={() => deleteTask(task.id)} />
-          ))}
-        </div>
+      {tasks.length > 0 && shownTasks.length === 0 && (
+        <p className="text-sm text-center mt-6" style={{ color: palette.mutedInk }}>
+          אין משימות להצגה בסינון הזה.
+        </p>
       )}
 
-      {doneTasks.length > 0 && (
-        <div>
-          <div className="flex items-center justify-between mb-2 px-1">
-            <span className="text-xs" style={{ color: palette.mutedInk }}>הושלמו ({doneTasks.length})</span>
-            <button onClick={clearDoneTasks} className="text-xs flex items-center gap-1" style={{ color: palette.mutedInk }}>
-              <RotateCcw size={12} /> נקה
-            </button>
-          </div>
-          <div className="space-y-2">
-            {doneTasks.map((task) => (
-              <TaskRow key={task.id} task={task} onToggle={() => toggleTask(task.id)} onStatusChange={(status) => updateTaskStatus(task.id, status)} onStatusTextChange={(statusText) => updateTaskStatusText(task.id, statusText)} onDelete={() => deleteTask(task.id)} />
-            ))}
-          </div>
+      {shownTasks.length > 0 && (
+        <div className="space-y-2 mb-4">
+          {shownTasks.map((task) => (
+            <TaskRow
+              key={task.id}
+              task={task}
+              onToggle={() => toggleTask(task.id)}
+              onStatusChange={(status) => updateTaskStatus(task.id, status)}
+              onStatusTextChange={(statusText) => updateTaskStatusText(task.id, statusText)}
+              onPriorityChange={(priority) => updateTaskPriority(task.id, priority)}
+              onDelete={() => deleteTask(task.id)}
+            />
+          ))}
         </div>
       )}
     </div>
   );
 }
 
-function TaskRow({ task, onToggle, onStatusChange, onStatusTextChange, onDelete }) {
+function MiniStat({ label, value, danger }) {
+  return (
+    <div className="rounded-xl py-2 px-1" style={{ background: danger ? "#F7E5E2" : palette.tasksAccentSoft }}>
+      <p className="text-base font-semibold" style={{ color: danger ? palette.danger : palette.tasksAccent }}>{value}</p>
+      <p className="text-[10px]" style={{ color: palette.mutedInk }}>{label}</p>
+    </div>
+  );
+}
+
+function TaskRow({ task, onToggle, onStatusChange, onStatusTextChange, onPriorityChange, onDelete }) {
   const status = getTaskStatus(task);
   const done = status === "done";
+  const priority = getTaskPriority(task);
   const overdue = !done && isOverdue(task.due);
+  const priorityColor = priority === "high" ? palette.danger : priority === "low" ? palette.mutedInk : palette.tasksAccent;
+
   return (
-    <div className="rounded-xl px-3 py-2.5" style={{ background: palette.surface, border: `1px solid ${palette.border}` }}>
+    <div className="rounded-xl px-3 py-2.5" style={{ background: palette.surface, border: `1px solid ${overdue ? palette.danger : palette.border}` }}>
       <div className="flex items-start gap-3">
         <button onClick={onToggle} style={{ color: done ? palette.tasksAccent : palette.mutedInk }}>
           {done ? <CheckSquare size={20} /> : <Square size={20} />}
@@ -930,28 +1086,49 @@ function TaskRow({ task, onToggle, onStatusChange, onStatusTextChange, onDelete 
           >
             {task.text}
           </span>
-          {task.due && task.due.date && (
-            <span className="text-[11px] flex items-center gap-1 mt-0.5" style={{ color: overdue ? palette.danger : palette.mutedInk }}>
-              <Calendar size={11} /> {formatDue(task.due)}
+          <div className="flex flex-wrap items-center gap-2 mt-0.5">
+            {task.due && task.due.date && (
+              <span className="text-[11px] flex items-center gap-1" style={{ color: overdue ? palette.danger : palette.mutedInk }}>
+                <Calendar size={11} /> {formatDue(task.due)}{overdue ? " · באיחור" : ""}
+              </span>
+            )}
+            <span className="text-[11px]" style={{ color: priorityColor }}>
+              {TASK_PRIORITY[priority] || TASK_PRIORITY.normal}
             </span>
-          )}
+          </div>
         </div>
         <button onClick={onDelete} style={{ color: palette.mutedInk }}>
           <X size={16} />
         </button>
       </div>
 
-      <div className="mt-2 flex items-center gap-2 pr-8">
-        <span className="text-[11px]" style={{ color: palette.mutedInk }}>סטטוס</span>
-        <select
-          value={status}
-          onChange={(e) => onStatusChange(e.target.value)}
-          className="flex-1 rounded-xl px-3 py-2 outline-none text-xs"
-          style={{ background: done ? palette.tasksAccentSoft : palette.bg, border: `1px solid ${palette.border}`, color: done ? palette.tasksAccent : palette.ink }}
-        >
-          <option value="not_done">לא בוצע</option>
-          <option value="done">בוצע</option>
-        </select>
+      <div className="mt-2 grid grid-cols-2 gap-2 pr-8">
+        <label className="text-[11px]" style={{ color: palette.mutedInk }}>
+          סטטוס
+          <select
+            value={status}
+            onChange={(e) => onStatusChange(e.target.value)}
+            className="mt-1 w-full rounded-xl px-3 py-2 outline-none text-xs"
+            style={{ background: done ? palette.tasksAccentSoft : palette.bg, border: `1px solid ${palette.border}`, color: done ? palette.tasksAccent : palette.ink }}
+          >
+            <option value="not_done">לא בוצע</option>
+            <option value="done">בוצע</option>
+          </select>
+        </label>
+
+        <label className="text-[11px]" style={{ color: palette.mutedInk }}>
+          עדיפות
+          <select
+            value={priority}
+            onChange={(e) => onPriorityChange(e.target.value)}
+            className="mt-1 w-full rounded-xl px-3 py-2 outline-none text-xs"
+            style={{ background: palette.bg, border: `1px solid ${palette.border}`, color: priorityColor }}
+          >
+            <option value="normal">רגילה</option>
+            <option value="high">דחופה</option>
+            <option value="low">נמוכה</option>
+          </select>
+        </label>
       </div>
 
       <div className="mt-2 pr-8">
