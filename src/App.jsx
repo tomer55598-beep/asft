@@ -285,6 +285,53 @@ const FOOD_SUGGESTIONS = [
   "סודה"
 ];
 
+const COMMON_FOOD_PROFILES = [
+  { name: "שווארמה", aliases: ["שווארמה", "שווארמה בפיתה", "שווארמה בלאפה", "שווארמה בצלחת", "שווארמה בבאגט"], category: "מנה עיקרית · בשר", portionHint: "פיתה / לאפה / צלחת / גרמים", tip: "כדאי לרשום גם רטבים, צ׳יפס ותוספות אם היו." },
+  { name: "פיצה", aliases: ["פיצה", "משולש פיצה", "פיצה משפחתית", "פיצה אישית", "פיצה מרגריטה", "פיצה פפרוני", "פיצה טונה", "פיצה פטריות", "פיצה זיתים"], category: "מנה עיקרית · מאפה", portionHint: "מספר משולשים / פיצה אישית", tip: "תוספות וגבינה כפולה משנות את הערך התזונתי." },
+  { name: "סושי", aliases: ["סושי", "רול סושי", "סושי סלמון", "סושי טונה", "סושי צמחוני", "ניגירי", "מאקי", "אינסייד אאוט", "קומבינציית סושי"], category: "מנה עיקרית · דגים/אורז", portionHint: "רולים / יחידות / קומבינציה", tip: "רוטבים, טמפורה ומיונז משנים מאוד." },
+  { name: "בולונז", aliases: ["בולונז", "פסטה בולונז", "ספגטי בולונז", "רוטב בולונז"], category: "מנה עיקרית · פסטה ובשר", portionHint: "צלחת / גרמים / קופסה", tip: "אפשר לרשום בנפרד אם זו מנה עם הרבה רוטב או גבינה." },
+  { name: "עוף בקארי", aliases: ["עוף בקארי", "קארי עוף", "עוף קארי", "עוף קארי עם אורז", "קארי ירוק", "קארי אדום", "קארי תאילנדי", "עוף במסאלה", "עוף טיקה", "צ׳יקן טיקה", "עוף חמאה"], category: "מנה עיקרית · עוף ורוטב", portionHint: "צלחת / גרמים / עם אורז", tip: "רוטב קוקוס/שמנת ואורז בצד משנים את המנה." },
+  { name: "המבורגר", aliases: ["המבורגר", "צ׳יזבורגר", "בורגר", "המבורגר כפול"], category: "מנה עיקרית · בשר", portionHint: "יחידה / כפול / עם צ׳יפס", tip: "כדאי לציין רטבים, גבינה וצ׳יפס אם היו." },
+  { name: "פלאפל", aliases: ["פלאפל", "פלאפל בפיתה", "פלאפל בצלחת"], category: "מנה עיקרית · קטניות", portionHint: "פיתה / צלחת / כדורים", tip: "טחינה, צ׳יפס וסלטים יכולים לשנות את המנה." },
+  { name: "שניצל", aliases: ["שניצל", "שניצלונים", "שניצל בבאגט", "שניצל בפיתה"], category: "מנה עיקרית · עוף", portionHint: "יחידות / גרמים / בבאגט", tip: "לחם, רטבים ותוספת בצד חשובים לרישום מדויק יותר." },
+  { name: "חזה עוף", aliases: ["חזה עוף", "חזה עוף על האש", "עוף", "פרגית", "פרגית בפיתה", "פרגית בלאפה"], category: "חלבון · עוף", portionHint: "גרמים / חתיכות / מנה", tip: "שיטת בישול, שמן ורוטב יכולים לשנות." },
+  { name: "סטייק", aliases: ["סטייק", "אנטריקוט", "סינטה", "אסאדו", "צלי בקר", "בקר", "בשר טחון", "כדורי בשר", "קציצות", "גולאש"], category: "חלבון · בשר", portionHint: "גרמים / חתיכות / מנה", tip: "אחוז שומן ורוטב משפיעים מאוד." },
+  { name: "טונה", aliases: ["טונה", "סלט טונה", "טונה במים", "טונה בשמן"], category: "חלבון · דגים", portionHint: "קופסה / גרמים / סלט", tip: "כדאי לציין מים/שמן ותוספות." },
+  { name: "סלמון", aliases: ["סלמון", "דג סלמון", "דג", "אמנון", "דג לבן", "דניס", "נסיכת הנילוס"], category: "חלבון · דגים", portionHint: "פילה / גרמים / מנה", tip: "אופן הכנה ורוטב משנים." },
+  { name: "ביצים", aliases: ["ביצה", "ביצים", "חביתה", "מקושקשת", "שקשוקה"], category: "חלבון · ביצים", portionHint: "מספר ביצים / מנה", tip: "שמן, גבינה ולחם ליד משנים את הרישום." },
+  { name: "מוקפץ", aliases: ["מוקפץ", "מוקפץ עוף", "מוקפץ בקר", "מוקפץ ירקות", "נודלס", "פאד תאי", "אורז מוקפץ", "עוף טריאקי", "עוף חמוץ מתוק"], category: "מנה עיקרית · אסייתי", portionHint: "צלחת / קופסה / גרמים", tip: "רוטב, שמן וכמות נודלס/אורז משנים מאוד." },
+  { name: "פסטה", aliases: ["פסטה", "פסטה פסטו", "פסטה עגבניות", "פסטה שמנת", "פסטה אלפרדו", "פסטה רוזה", "פסטה טונה", "פסטה עוף", "לזניה", "רביולי", "ניוקי"], category: "פחמימה · פסטה", portionHint: "צלחת / גרמים / קופסה", tip: "רוטב שמנת/גבינה/שמן משנה את המנה." },
+  { name: "אורז", aliases: ["אורז", "אורז לבן", "אורז מלא", "אורז עם עוף", "אורז סושי"], category: "פחמימה · תוספת", portionHint: "כפות / כוס / גרמים", tip: "כדאי לציין אם זו תוספת או חלק ממנה." },
+  { name: "פתיתים וקוסקוס", aliases: ["פתיתים", "קוסקוס", "בורגול", "קינואה"], category: "פחמימה · תוספת", portionHint: "כוס / כפות / גרמים", tip: "רוטב/שמן יכול לשנות." },
+  { name: "לחם ומאפים", aliases: ["פיתה", "לאפה", "באגט", "לחם", "לחמניה", "חלה", "טורטייה", "ראפ", "פוקאצ׳ה", "בורקס", "בורקס גבינה", "בורקס תפוח אדמה", "מלאווח", "ג׳חנון", "קרואסון", "מאפה גבינה"], category: "פחמימה · מאפה", portionHint: "יחידה / פרוסות / חצי מנה", tip: "מילוי ותוספות חשובים." },
+  { name: "חומוס וטחינה", aliases: ["חומוס", "חומוס גרגירים", "חומוס פול", "טחינה", "סביח"], category: "מנה/תוספת · קטניות ושומן", portionHint: "צלחת / כפות / פיתה", tip: "שמן, ביצה ופיתה ליד משנים." },
+  { name: "סלט", aliases: ["סלט", "סלט ירקות", "סלט יווני", "סלט עוף", "ירקות", "מלפפון", "עגבניה", "פלפל", "חסה", "כרוב", "גזר", "ברוקולי", "כרובית", "שעועית ירוקה"], category: "ירקות", portionHint: "קערה / צלחת / גרמים", tip: "רוטב, שמן, גבינות וקרוטונים משנים." },
+  { name: "מוצרי חלב", aliases: ["קוטג׳", "גבינה לבנה", "גבינה צהובה", "גבינה בולגרית", "פטה", "יוגורט", "יוגורט חלבון", "מעדן חלבון", "מילקי", "חלב", "שוקו", "סקי", "שמנת"], category: "חלבון/חלב", portionHint: "גביע / פרוסות / גרמים", tip: "אחוז שומן וגודל גביע חשובים." },
+  { name: "אבקת חלבון", aliases: ["אבקת חלבון", "שייק חלבון", "משקה חלבון", "חטיף חלבון"], category: "חלבון · מוצר", portionHint: "סקופים / יחידה / בקבוק", tip: "במוצרים כאלה הכי טוב לשמור פעם אחת בספר מוצרים." },
+  { name: "שוקולדים וחטיפים מתוקים", aliases: ["קינדר בואנו", "קינדר שוקולד", "קינדר ג׳וי", "קינדר קאנטרי", "M&M", "M&M בוטנים", "M&M שוקולד", "סניקרס", "טוויקס", "מארס", "קיטקט", "אוראו", "נוטלה", "פסק זמן", "כיף כף", "קליק", "טורטית", "שוקולד", "שוקולד חלב", "שוקולד מריר", "קרמבו"], category: "חטיף מתוק", portionHint: "יחידה / חטיף / גרמים / חופן", tip: "במוצרים ארוזים כדאי לשמור את הערכים מהאריזה בספר מוצרים." },
+  { name: "חטיפים מלוחים", aliases: ["במבה", "במבה נוגט", "ביסלי", "דוריטוס", "תפוצ׳יפס", "פרינגלס", "בייגלה", "פופקורן", "גרעינים"], category: "חטיף מלוח", portionHint: "שקית / חופן / גרמים", tip: "גודל שקית משתנה מאוד." },
+  { name: "אגוזים", aliases: ["אגוזים", "שקדים", "קשיו", "חמאת בוטנים"], category: "שומן · נשנוש", portionHint: "חופן / כפות / גרמים", tip: "כמות קטנה יכולה להיות משמעותית, אז כדאי לרשום כמות." },
+  { name: "פירות", aliases: ["בננה", "תפוח", "תפוז", "ענבים", "אבטיח", "מלון", "תותים", "מנגו", "אננס", "אפרסק", "אגס", "תמרים", "צימוקים", "אבוקדו"], category: "פרי", portionHint: "יחידה / פרוסות / חופן / גרמים", tip: "פירות יבשים ואבוקדו שונים מפירות רגילים." },
+  { name: "שתייה", aliases: ["קפה", "נס קפה", "קפה שחור", "תה", "מיץ", "קולה", "זירו", "מים", "סודה"], category: "שתייה", portionHint: "כוס / בקבוק / פחית", tip: "שתייה מתוקה כדאי לרשום בנפרד מהמים." },
+];
+
+function getFoodProfileMatch(name) {
+  const cleanedName = cleanFoodName(name);
+  const normalized = normalizeFoodText(cleanedName || name);
+  if (!normalized) return null;
+  return COMMON_FOOD_PROFILES.find((profile) =>
+    profile.aliases.some((alias) => {
+      const normAlias = normalizeFoodText(alias);
+      return normAlias && (normalized.includes(normAlias) || normAlias.includes(normalized));
+    })
+  ) || null;
+}
+
+function getFoodProfileLabel(entry) {
+  if (!entry) return "";
+  return entry.category || entry.profileName || "";
+}
+
 function getTaskStatus(task) {
   return task.status || (task.done ? "done" : "not_done");
 }
@@ -472,6 +519,7 @@ export default function DayBoard() {
   useEffect(() => {
     const extractedGrams = extractGramsFromName(foodForm.name);
     const savedMatch = getSavedFoodMatch(savedFoods, foodForm.name);
+    const profileMatch = getFoodProfileMatch(foodForm.name);
     const suggestionMatch = getFoodSuggestionMatch(foodForm.name);
     setFoodForm((prev) => {
       const next = {
@@ -490,6 +538,8 @@ export default function DayBoard() {
         } else {
           next.autoNote = `זוהה מוצר שמור בספר: ${savedMatch.name}. אפשר להוסיף מהר בלי מספרים.`;
         }
+      } else if (profileMatch) {
+        next.autoNote = `זוהה: ${profileMatch.name} · ${profileMatch.category}. כמות מומלצת לרישום: ${profileMatch.portionHint}. ${profileMatch.tip}`;
       } else if (suggestionMatch) {
         next.autoNote = `זוהה מאכל מהרשימה: ${suggestionMatch}. אפשר להוסיף מהר בלי מספרים, או למלא פרטים אם יש לך.`;
       } else {
@@ -612,6 +662,7 @@ export default function DayBoard() {
     const rawName = foodForm.name.trim();
     const name = cleanFoodName(rawName) || rawName;
     const grams = getFoodGrams(rawName, foodForm.grams);
+    const profile = getFoodProfileMatch(name);
     if (!name) return;
 
     const calories = parseFloat(foodForm.calories);
@@ -625,6 +676,9 @@ export default function DayBoard() {
       id: uid(),
       name,
       grams: grams || null,
+      profileName: profile?.name || null,
+      category: profile?.category || null,
+      portionHint: profile?.portionHint || null,
       hasNutrition: hasDetails,
       calories: hasDetails && Number.isFinite(calories) ? Math.round(calories) : null,
       protein: hasDetails && Number.isFinite(protein) ? roundOne(protein) : null,
@@ -672,9 +726,13 @@ export default function DayBoard() {
 
   const logProductFromLibrary = (product) => {
     const hasDetails = hasFoodNutrition(product);
+    const profile = getFoodProfileMatch(product.name);
     const entry = {
       id: uid(),
       name: product.name,
+      profileName: profile?.name || null,
+      category: profile?.category || null,
+      portionHint: profile?.portionHint || null,
       hasNutrition: hasDetails,
       calories: hasDetails ? product.calories : null,
       protein: hasDetails ? product.protein : null,
@@ -1309,6 +1367,9 @@ function FoodView({
             <div key={f.id} className="flex items-center gap-3 rounded-xl px-3 py-2.5" style={{ background: palette.surface, border: `1px solid ${palette.border}` }}>
               <div className="flex-1">
                 <p className="text-sm font-medium">{f.name}</p>
+                {getFoodProfileLabel(f) && (
+                  <p className="text-[11px] mt-0.5" style={{ color: palette.foodAccent }}>{getFoodProfileLabel(f)}</p>
+                )}
                 <p className="text-[11px]" style={{ color: palette.mutedInk }}>
                   {f.time}{f.grams ? ` · ${f.grams} גרם` : ""} · {formatFoodNutrition(f)}
                 </p>
@@ -1476,7 +1537,7 @@ function HistoryView({ historyRows }) {
                   <div className="space-y-1">
                     {day.food.map((f) => (
                       <p key={f.id} className="text-[12px]" style={{ color: palette.mutedInk }}>
-                        {f.time} · {f.name}{f.grams ? ` · ${f.grams} גרם` : ""} · {formatFoodNutrition(f)}
+                        {f.time} · {f.name}{getFoodProfileLabel(f) ? ` · ${getFoodProfileLabel(f)}` : ""}{f.grams ? ` · ${f.grams} גרם` : ""} · {formatFoodNutrition(f)}
                       </p>
                     ))}
                   </div>
